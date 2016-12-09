@@ -24,6 +24,7 @@ class BitSet(object):
         else:
             raise Exception('unitSize is only allow 8,16,32,64.')
         
+	#fullMask = 0xffffffffffffffff
         self.fullMask = 18446744073709551615 >> (64 - unitSize)
         
         pool = array.array(self.unitType, [0])
