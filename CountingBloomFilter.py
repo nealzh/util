@@ -1,11 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from BitSet import BitSet
+from CountingSet import CountingSet
 import math
 import mmh3
 
-class BloomFilter(object):
+class CountingBloomFilter(object):
 
     mask32 = 0xffffffff
     mask64 = 0xffffffffffffffff
@@ -37,7 +37,7 @@ class BloomFilter(object):
             641, 643, 647, 653, 659, 
             661, 673, 677, 683, 691]
     
-    def __init__(self, n, fpr=0.00001):
+    def __init__(self, n, fpr=0.00001, countingLength=16):
         
         m = -1 * math.log(fpr, math.e) * n / math.pow(math.log(2, math.e), 2)
         k = (m / n) * math.log(2, math.e)
@@ -47,27 +47,27 @@ class BloomFilter(object):
         self.m = int(math.ceil(m))
         self.k = int(k)
 
-        self.bsUnitSize = 64
-        self.bsCap = int(math.ceil(self.m / 64))
+        self.bsUnitSize = countingLength
+        self.bsCap = self.m 
 
-        self.bitSet = BitSet(self.bsCap, self.bsUnitSize)
-        self.bitSetLength = self.bitSet.length
+        self.countingSet = CountingSet(self.bsCap, self.bsUnitSize)
+        self.countingSetLength = self.countingSet.length
         
     def append(self, s):
-        self.bitSet.setList(self.hashs(s, self.k))
+        self.countingSet.addList(self.hashs(s, self.k))
 
     def exists(self, s):
-        bites = self.bitSet.getList(self.hashs(s, self.k))
-        return not (0 in bites)
+        bites = self.countingSet.getList(self.hashs(s, self.k))
+        return min(bites)
     
     def remove(self, s):
-        self.bitSet.setList(self.hashs(s, self.k), False)
+        self.countingSet.setList(self.hashs(s, self.k), 0)
         
     def clear(self):
-        self.bitSet.clear()
+        self.countingSet.clear()
 
     def hashs(self, s, k):
-        bitSetLength = self.bitSetLength
+        countingSetLength = self.countingSetLength
         #mask = self.mask32
         mask = self.mask128
         seeds = self.seeds
@@ -75,13 +75,13 @@ class BloomFilter(object):
         hashs = []
         for i in range(k):
             #print(mmh3.hash64(s, seeds[i]))
-            #hashs.append((mmh3.hash(s, seeds[i]) & mask) % bitSetLength)
-            hashs.append((mmh3.hash128(s, seeds[i]) & mask) % bitSetLength)
+            #hashs.append((mmh3.hash(s, seeds[i]) & mask) % countingSetLength)
+            hashs.append((mmh3.hash128(s, seeds[i]) & mask) % countingSetLength)
         return hashs
 
     def hashs2(self, s, k):
 
-        bitSetLength = self.bitSetLength
+        countingSetLength = self.countingSetLength
         mask = self.mask32
         
         hashs = []
@@ -89,5 +89,5 @@ class BloomFilter(object):
         hash2 = mmh3.hash64(s, hash1)
 
         for i in k:
-            hashs.append(((hash1 + i * hash2) % bitSetLength) & mask)
+            hashs.append(((hash1 + i * hash2) % countingSetLength) & mask)
         return hashs

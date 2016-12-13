@@ -2,16 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import time
-from BitSet2 import BitSet
+from FastBitSet import FastBitSet
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 
-#cap = 500000
-cap = 100000
+cap = 500000
 size = 64
 listSize = 8
-#indexes = [1, 555, 687987, 73521, 53821, 1287, 36746, 2165]
-indexes = [1, 555, 61521, 2001, 6543, 1287, 36746, 2165]
+indexes = [1, 555, 687987, 73521, 53821, 1287, 36746, 2165]
 
 print('start BitSet test.')
 print()
@@ -20,7 +18,7 @@ print('cap:', cap, '; size:', size, '; bites:', cap * size)
 print()
 
 print(time.strftime( ISOTIMEFORMAT, time.localtime()), 'start create BitSet.')
-bs = BitSet(cap, size)
+bs = FastBitSet(cap, size)
 print(time.strftime( ISOTIMEFORMAT, time.localtime()), 'end create BitSet.')
 
 print()

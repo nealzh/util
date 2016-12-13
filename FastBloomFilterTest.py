@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-from BloomFilter import BloomFilter
+from FastBloomFilter import FastBloomFilter
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 
@@ -17,7 +17,7 @@ print('size:', n)
 print()
 
 print(time.strftime( ISOTIMEFORMAT, time.localtime()), 'start create BitSet.')
-bf = BloomFilter(n, fpr)
+bf = FastBloomFilter(n, fpr)
 print(time.strftime( ISOTIMEFORMAT, time.localtime()), 'end create BitSet.')
 
 print('m: ', bf.m, 'n: ', bf.n, 'k: ', bf.k)

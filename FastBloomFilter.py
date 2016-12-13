@@ -1,11 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from BitSet import BitSet
+from FastBitSet import FastBitSet
 import math
 import mmh3
 
-class BloomFilter(object):
+class FastBloomFilter(object):
 
     mask32 = 0xffffffff
     mask64 = 0xffffffffffffffff
@@ -50,7 +50,7 @@ class BloomFilter(object):
         self.bsUnitSize = 64
         self.bsCap = int(math.ceil(self.m / 64))
 
-        self.bitSet = BitSet(self.bsCap, self.bsUnitSize)
+        self.bitSet = FastBitSet(self.bsCap, self.bsUnitSize)
         self.bitSetLength = self.bitSet.length
         
     def append(self, s):

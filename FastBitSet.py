@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import numpy as np
+import array
 
-class BitSet(object):
+class FastBitSet(object):
     
     def __init__(self, capacity, unitSize=32):
         
@@ -14,19 +14,22 @@ class BitSet(object):
         if(capacity <= 0):
             raise Exception('capacity must be > 0')
         if(unitSize == 8):
-            self.unitType = np.uint8
+            self.unitType = 'B'
         elif(unitSize == 16):
-            self.unitType = np.uint16
+            self.unitType = 'H'
         elif(unitSize == 32):
-            self.unitType = np.uint32
+            self.unitType = 'I'
         elif(unitSize == 64):
-            self.unitType = np.uint64
+            self.unitType = 'Q'
         else:
             raise Exception('unitSize is only allow 8,16,32,64.')
         
-        self.fullMask = self.unitType(18446744073709551615 >> (64 - unitSize))
+        self.fullMask = 18446744073709551615 >> (64 - unitSize)
         
-        pool = np.zeros(capacity, dtype=self.unitType)
+        pool = array.array(self.unitType, [0])
+        
+        for i in range(capacity - 1):
+            pool.append(0)
         
         self.pool = pool
 
@@ -42,24 +45,22 @@ class BitSet(object):
         
         bucketIndex, unitIndex = divmod(fromIndex, self.unitSize)
         endBucketIndex, endUnitIndex = divmod(fromIndex + length - 1, self.unitSize)
-        unitIndex = self.unitType(unitIndex)
-        endUnitIndex = self.unitType(endUnitIndex)
         fullMask = self.fullMask
         bits = []
         
         if(bucketIndex == endBucketIndex):
             
-            mask = (fullMask >> self.unitType(self.unitSize - length)) <<  unitIndex
+            mask = (fullMask >> (self.unitSize - length)) <<  unitIndex
             bits.append((self.pool[bucketIndex] & mask) >> unitIndex)
             
         else:
             for i in range(bucketIndex, endBucketIndex + 1):
                 if(i == bucketIndex):
-                    mask = (fullMask >> unitIndex) << unitIndex
+                    mask = (fullMask >> unitIndex) <<  unitIndex
                     bits.append((self.pool[i] & mask) >> unitIndex)
                     
                 elif(i == endBucketIndex):
-                    mask = fullMask >> self.unitType(self.unitSize - endUnitIndex - 1)
+                    mask = fullMask >> (self.unitSize - endUnitIndex - 1)
                     bits.append(self.pool[i] & mask)
                     
                 else:
@@ -79,9 +80,9 @@ class BitSet(object):
             
             bucketIndex, unitIndex = divmod(index, self.unitSize)
             
-            mask = self.unitType(1 << unitIndex)
+            mask = 1 << unitIndex
         
-            bits.append((self.pool[bucketIndex] & mask) >> self.unitType(unitIndex))
+            bits.append((self.pool[bucketIndex] & mask) >> unitIndex)
             
         return bits
     
@@ -93,9 +94,9 @@ class BitSet(object):
             raise Exception('BitSet out of index.')
         
         bucketIndex, unitIndex = divmod(index, self.unitSize)
-        mask = self.unitType(1 << unitIndex)
+        mask = 1 << unitIndex
         
-        return (self.pool[bucketIndex] & mask) >> self.unitType(unitIndex)
+        return (self.pool[bucketIndex] & mask) >> unitIndex
 
     def set(self, fromIndex, length=1, value=True):
         
@@ -109,14 +110,13 @@ class BitSet(object):
         
         bucketIndex, unitIndex = divmod(fromIndex, self.unitSize)
         endBucketIndex, endUnitIndex = divmod(fromIndex + length - 1, self.unitSize)
-        unitIndex = self.unitType(unitIndex)
-        endUnitIndex = self.unitType(endUnitIndex)
+
         fullMask = self.fullMask
 
         #change in same bucket
         if(bucketIndex == endBucketIndex):
             
-            mask = (fullMask >> self.unitType(self.unitSize - length)) <<  unitIndex
+            mask = (fullMask >> (self.unitSize - length)) <<  unitIndex
 
             #set 1
             if(value):
@@ -142,7 +142,7 @@ class BitSet(object):
                     #end bucket
                     elif(i == endBucketIndex):
                         
-                        mask = self.fullMask >> self.unitType(self.unitSize - endUnitIndex - 1)
+                        mask = self.fullMask >> (self.unitSize - endUnitIndex - 1)
                         self.pool[i] = self.pool[i] | mask
 
                     #middle of the start and end
@@ -158,13 +158,13 @@ class BitSet(object):
                     #first bucket
                     if(i == bucketIndex):
                         
-                        mask = ((fullMask >> unitIndex) <<  unitIndex) ^ fullMask
+                        mask = ((self.fullMask >> unitIndex) <<  unitIndex) ^ fullMask
                         self.pool[i] = self.pool[i] & mask
 
                     #end bucket
                     elif(i == endBucketIndex):
                         
-                        mask = (self.fullMask >> self.unitType(self.unitSize - endUnitIndex - 1)) ^ fullMask
+                        mask = (self.fullMask >> (self.unitSize - endUnitIndex - 1)) ^ fullMask
                         self.pool[i] = self.pool[i] & mask
 
                     #middle of the start and end
@@ -182,7 +182,7 @@ class BitSet(object):
                 if(index >= self.length):
                     raise Exception('BitSet out of index.')
                 bucketIndex, unitIndex = divmod(index, self.unitSize)
-                mask = self.unitType(1 << unitIndex)
+                mask = 1 << unitIndex
                 self.pool[bucketIndex] = self.pool[bucketIndex] | mask
             
         else:
@@ -190,7 +190,7 @@ class BitSet(object):
                 if(index >= self.length):
                     raise Exception('BitSet out of index.')
                 bucketIndex, unitIndex = divmod(index, self.unitSize)
-                mask = self.unitType(1 << unitIndex)
+                mask = 1 << unitIndex
                 self.pool[bucketIndex] = self.pool[bucketIndex] & (mask ^ self.fullMask)
 
     def setOne(self, index, value=True):
@@ -202,7 +202,7 @@ class BitSet(object):
         
         bucketIndex, unitIndex = divmod(index, self.unitSize)
 
-        mask = self.unitType(1 << unitIndex)
+        mask = 1 << unitIndex
 
         if(value):
             self.pool[bucketIndex] = self.pool[bucketIndex] | mask
@@ -229,13 +229,12 @@ class BitSet(object):
         
         bucketIndex, unitIndex = divmod(fromIndex, self.unitSize)
         endBucketIndex, endUnitIndex = divmod(fromIndex + length - 1, self.unitSize)
-        unitIndex = self.unitType(unitIndex)
-        endUnitIndex = self.unitType(endUnitIndex)
+
         fullMask = self.fullMask
         
         if(bucketIndex == endBucketIndex):
             
-            mask = (fullMask >> self.unitType(self.unitSize - length)) <<  unitIndex
+            mask = (fullMask >> (self.unitSize - length)) <<  unitIndex
             self.pool[bucketIndex] = self.pool[bucketIndex] ^ mask
             
         else:
@@ -244,7 +243,7 @@ class BitSet(object):
                     mask = (fullMask >> unitIndex) <<  unitIndex
                     self.pool[bucketIndex] = self.pool[bucketIndex] ^ mask
                 elif(i == endBucketIndex):
-                    mask = fullMask >> self.unitType(self.unitSize - endUnitIndex - 1)
+                    mask = fullMask >> (self.unitSize - endUnitIndex - 1)
                     self.pool[bucketIndex] = self.pool[bucketIndex] ^ mask
                 else:
                     self.pool[bucketIndex] = self.pool[bucketIndex] ^ fullMask
@@ -258,7 +257,7 @@ class BitSet(object):
         
         bucketIndex, unitIndex = divmod(index, self.unitSize)
 
-        mask = self.unitType(1 << unitIndex)
+        mask = 1 << unitIndex
 
         self.pool[bucketIndex] = self.pool[bucketIndex] ^ mask
 
